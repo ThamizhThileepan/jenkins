@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         // Install the Maven version configured as "M3" and add it to the path.
-        maven "M3"
+        maven "maven3"
         dockerTool "docker"
         
         
@@ -17,7 +17,7 @@ pipeline {
         stage('Git Checkout') {
             steps {
                 // Get some code from a GitHub repository
-                git 'https://github.com/jglick/simple-maven-project-with-tests.git'
+                git 'https://github.com/jerelquay/docker-maven-sample.git'
             }
         }           
         
@@ -28,12 +28,38 @@ pipeline {
             }   
         }
         
-        stage('Sonarqube Scan') {
-            steps {
-                sh '$SCANNER_HOME/bin/sonar-scanner'
+        // stage('Sonarqube Scan') {
+        //     steps {
+        //         sh '$SCANNER_HOME/bin/sonar-scanner -Dsonar.url='
+        //     }
+        // }
+        
+        // stage('Dependency Check') {
+        //     steps{
+        //         dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'dependency-check'
+        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //     }
+        // } 
+        
+        stage('Build Application') {
+            steps{
+                sh 'mvn clean install'
             }
         }
-              
+        
+        stage ('Docker build and push'){
+            steps{
+                script{
+                 withDockerRegistry(credentialsId: '2a586923-0892-4d46-9a6b-febd9650c77d', toolName: 'docker') {
+                 sh 'docker build -t sample-project:1.0 .'
+                 sh 'docker tag sample-project:1.0 thamizhthileepan/grtrepo:1.0'
+                 sh 'docker push thamizhthileepan/grtrepo:1.0'
+}   
+                }
+            }
+        }
+        
+        
     }
             post {
                 // If Maven was able to run the tests, even if some of the test
@@ -44,4 +70,3 @@ pipeline {
                 }
             }
         }
-
